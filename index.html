@@ -234,6 +234,30 @@
     justify-content: space-between;
   }
 
+  .move-controls{
+    display: flex;
+    gap: 4px;
+    margin-top: 10px;
+    padding-top: 10px;
+    border-top: 1px solid var(--border);
+  }
+
+  .move-btn{
+    flex: 1;
+    background: rgba(255,255,255,0.03);
+    border: 1px solid var(--border);
+    color: var(--text-dim);
+    font-family: 'Inter', sans-serif;
+    font-size: 11.5px;
+    font-weight: 500;
+    padding: 6px 0;
+    border-radius: 7px;
+    cursor: pointer;
+    transition: all 0.15s ease;
+  }
+  .move-btn:hover:not(:disabled){ border-color: var(--border-strong); color: var(--text); background: rgba(255,255,255,0.06); }
+  .move-btn:disabled{ opacity: 0.3; cursor: default; }
+
   .badge{
     font-size: 11px;
     font-weight: 600;
@@ -252,18 +276,25 @@
     font-weight: 500;
   }
 
-  .delete-btn{
+  .card-actions{
+    display: flex;
+    gap: 2px;
+    flex-shrink: 0;
+  }
+
+  .delete-btn, .edit-btn{
     background: none;
     border: none;
     color: var(--text-faint);
     cursor: pointer;
-    font-size: 15px;
+    font-size: 13px;
     line-height: 1;
-    padding: 2px 4px;
+    padding: 4px 6px;
     border-radius: 6px;
     transition: color 0.15s ease, background 0.15s ease;
   }
   .delete-btn:hover{ color: var(--high); background: rgba(242,84,91,0.1); }
+  .edit-btn:hover{ color: var(--accent); background: var(--accent-soft); }
 
   /* ---------- Drawer ---------- */
   .overlay{
@@ -452,7 +483,7 @@
 <div class="overlay" id="overlay"></div>
 <div class="drawer" id="drawer">
   <div class="drawer-header">
-    <h2>New task</h2>
+    <h2 id="drawerTitle">New task</h2>
     <button class="close-btn" id="closeDrawer">✕</button>
   </div>
   <div class="drawer-body">
@@ -489,20 +520,54 @@
   </div>
   <div class="drawer-footer">
     <button class="submit-btn" id="submitTask">Add task</button>
+    <button class="submit-btn" id="cancelEdit" style="display:none; background: rgba(255,255,255,0.06); box-shadow: none; margin-top: 10px; color: var(--text-dim);">Cancel edit</button>
   </div>
 </div>
 
 <script>
-  let tasks = [
+  const STORAGE_KEY = 'taskflow.tasks';
+  const NEXT_ID_KEY = 'taskflow.nextId';
+
+  const defaultTasks = [
     { id: 1, title: "Design token system", desc: "Lock in the color, type, and spacing scale for the board.", priority: "Med", hours: 3, status: "todo" },
     { id: 2, title: "Build column grid", desc: "3-column layout with CSS Grid, responsive down to mobile.", priority: "High", hours: 5, status: "progress" },
     { id: 3, title: "Task card component", desc: "Title, description, priority badge, estimated hours.", priority: "High", hours: 4, status: "progress" },
     { id: 4, title: "Quick-add drawer", desc: "Slide-in form for creating a new task.", priority: "Med", hours: 3, status: "todo" },
     { id: 5, title: "Set up project repo", desc: "Initialize repo, folder structure, and README.", priority: "Low", hours: 1, status: "done" },
   ];
-  let nextId = 6;
+
+  // ---- Persistence layer ----
+  function loadTasks(){
+    try{
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if(raw){ return JSON.parse(raw); }
+    }catch(e){ console.warn('Could not read localStorage, falling back to defaults', e); }
+    return defaultTasks;
+  }
+
+  function loadNextId(){
+    try{
+      const raw = localStorage.getItem(NEXT_ID_KEY);
+      if(raw){ return parseInt(raw, 10); }
+    }catch(e){}
+    return 6;
+  }
+
+  function persist(){
+    try{
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(tasks));
+      localStorage.setItem(NEXT_ID_KEY, String(nextId));
+    }catch(e){ console.warn('Could not save to localStorage', e); }
+  }
+
+  let tasks = loadTasks();
+  let nextId = loadNextId();
   let selectedPriority = "Med";
   let draggedId = null;
+  let editingId = null; // null = add mode, otherwise id of task being edited
+
+  const columnOrder = ['todo', 'progress', 'done'];
+  const columnLabels = { todo: 'To Do', progress: 'In Progress', done: 'Done' };
 
   const stacks = {
     todo: document.getElementById('stack-todo'),
@@ -515,8 +580,19 @@
     done: document.getElementById('count-done'),
   };
 
+  function moveTask(id, newStatus){
+    const task = tasks.find(t => t.id === id);
+    if(task){ task.status = newStatus; persist(); render(); }
+  }
+
+  function deleteTask(id){
+    tasks = tasks.filter(t => t.id !== id);
+    persist();
+    render();
+  }
+
   function render(){
-    Object.keys(stacks).forEach(status => {
+    columnOrder.forEach(status => {
       const list = tasks.filter(t => t.status === status);
       stacks[status].innerHTML = '';
       counts[status].textContent = list.length;
@@ -535,15 +611,26 @@
         card.draggable = true;
         card.dataset.id = task.id;
 
+        const colIndex = columnOrder.indexOf(status);
+        const prevStatus = columnOrder[colIndex - 1];
+        const nextStatus = columnOrder[colIndex + 1];
+
         card.innerHTML = `
           <div class="card-top">
             <p class="card-title"></p>
-            <button class="delete-btn" title="Delete task">✕</button>
+            <div class="card-actions">
+              <button class="edit-btn" title="Edit task">✎</button>
+              <button class="delete-btn" title="Delete task">✕</button>
+            </div>
           </div>
           <p class="card-desc"></p>
           <div class="card-footer">
             <span class="badge ${task.priority.toLowerCase()}">${task.priority}</span>
             <span class="hours">${task.hours}h</span>
+          </div>
+          <div class="move-controls">
+            <button class="move-btn move-prev" ${!prevStatus ? 'disabled' : ''}>${prevStatus ? '← ' + columnLabels[prevStatus] : '—'}</button>
+            <button class="move-btn move-next" ${!nextStatus ? 'disabled' : ''}>${nextStatus ? columnLabels[nextStatus] + ' →' : '—'}</button>
           </div>
         `;
         card.querySelector('.card-title').textContent = task.title;
@@ -551,9 +638,18 @@
 
         card.querySelector('.delete-btn').addEventListener('click', (e) => {
           e.stopPropagation();
-          tasks = tasks.filter(t => t.id !== task.id);
-          render();
+          deleteTask(task.id);
         });
+
+        card.querySelector('.edit-btn').addEventListener('click', (e) => {
+          e.stopPropagation();
+          openEditDrawer(task);
+        });
+
+        const prevBtn = card.querySelector('.move-prev');
+        const nextBtn = card.querySelector('.move-next');
+        if(prevStatus) prevBtn.addEventListener('click', (e) => { e.stopPropagation(); moveTask(task.id, prevStatus); });
+        if(nextStatus) nextBtn.addEventListener('click', (e) => { e.stopPropagation(); moveTask(task.id, nextStatus); });
 
         card.addEventListener('dragstart', () => {
           draggedId = task.id;
@@ -576,27 +672,64 @@
       e.preventDefault();
       col.classList.remove('drag-over');
       const status = col.dataset.status;
-      const task = tasks.find(t => t.id === draggedId);
-      if(task){ task.status = status; render(); }
+      if(draggedId !== null){ moveTask(draggedId, status); }
     });
   });
 
-  // Drawer controls
+  // ---- Drawer controls ----
   const drawer = document.getElementById('drawer');
   const overlay = document.getElementById('overlay');
+  const drawerTitle = document.getElementById('drawerTitle');
+  const submitBtn = document.getElementById('submitTask');
+  const cancelEditBtn = document.getElementById('cancelEdit');
 
-  function openDrawer(){
+  function resetForm(){
+    document.getElementById('taskTitle').value = '';
+    document.getElementById('taskDesc').value = '';
+    document.getElementById('taskHours').value = '';
+    document.getElementById('taskTitle').style.borderColor = '';
+    document.getElementById('taskColumn').value = 'todo';
+    selectedPriority = 'Med';
+    document.querySelectorAll('.priority-toggle button').forEach(b => b.classList.remove('active'));
+    document.querySelector('.priority-toggle button[data-p="Med"]').classList.add('active');
+  }
+
+  function openAddDrawer(){
+    editingId = null;
+    resetForm();
+    drawerTitle.textContent = 'New task';
+    submitBtn.textContent = 'Add task';
+    cancelEditBtn.style.display = 'none';
     drawer.classList.add('open');
     overlay.classList.add('open');
   }
+
+  function openEditDrawer(task){
+    editingId = task.id;
+    document.getElementById('taskTitle').value = task.title;
+    document.getElementById('taskDesc').value = task.desc;
+    document.getElementById('taskHours').value = task.hours;
+    document.getElementById('taskColumn').value = task.status;
+    selectedPriority = task.priority;
+    document.querySelectorAll('.priority-toggle button').forEach(b => {
+      b.classList.toggle('active', b.dataset.p === task.priority);
+    });
+    drawerTitle.textContent = 'Edit task';
+    submitBtn.textContent = 'Save changes';
+    cancelEditBtn.style.display = 'block';
+    drawer.classList.add('open');
+    overlay.classList.add('open');
+  }
+
   function closeDrawer(){
     drawer.classList.remove('open');
     overlay.classList.remove('open');
   }
 
-  document.getElementById('openDrawer').addEventListener('click', openDrawer);
+  document.getElementById('openDrawer').addEventListener('click', openAddDrawer);
   document.getElementById('closeDrawer').addEventListener('click', closeDrawer);
   overlay.addEventListener('click', closeDrawer);
+  cancelEditBtn.addEventListener('click', closeDrawer);
 
   document.querySelectorAll('.priority-toggle button').forEach(btn => {
     btn.addEventListener('click', () => {
@@ -606,7 +739,7 @@
     });
   });
 
-  document.getElementById('submitTask').addEventListener('click', () => {
+  submitBtn.addEventListener('click', () => {
     const title = document.getElementById('taskTitle').value.trim();
     const desc = document.getElementById('taskDesc').value.trim();
     const hours = parseFloat(document.getElementById('taskHours').value) || 0;
@@ -617,14 +750,22 @@
       return;
     }
 
-    tasks.push({ id: nextId++, title, desc, priority: selectedPriority, hours, status });
+    if(editingId !== null){
+      const task = tasks.find(t => t.id === editingId);
+      if(task){
+        task.title = title;
+        task.desc = desc;
+        task.priority = selectedPriority;
+        task.hours = hours;
+        task.status = status;
+      }
+    }else{
+      tasks.push({ id: nextId++, title, desc, priority: selectedPriority, hours, status });
+    }
+
+    persist();
     render();
     closeDrawer();
-
-    document.getElementById('taskTitle').value = '';
-    document.getElementById('taskDesc').value = '';
-    document.getElementById('taskHours').value = '';
-    document.getElementById('taskTitle').style.borderColor = '';
   });
 
   render();
