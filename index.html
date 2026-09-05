@@ -114,6 +114,152 @@
   }
   .new-task-btn:active{ transform: translateY(0); }
 
+  /* ---------- Toolbar (search, tags, progress) ---------- */
+  .toolbar{
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 0 36px 18px;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+
+  .toolbar-row{
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    flex-wrap: wrap;
+  }
+
+  .search-wrap{
+    position: relative;
+    flex: 1;
+    min-width: 220px;
+  }
+
+  .search-wrap svg{
+    position: absolute;
+    left: 13px;
+    top: 50%;
+    transform: translateY(-50%);
+    opacity: 0.45;
+    pointer-events: none;
+  }
+
+  #searchInput{
+    width: 100%;
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    color: var(--text);
+    font-family: 'Inter', sans-serif;
+    font-size: 13.5px;
+    padding: 10px 14px 10px 38px;
+    outline: none;
+    backdrop-filter: blur(20px);
+    transition: border-color 0.15s ease, background 0.15s ease;
+  }
+  #searchInput:focus{ border-color: var(--accent); background: rgba(124,111,240,0.06); }
+  #searchInput::placeholder{ color: var(--text-faint); }
+
+  .tag-filters{
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+
+  .tag-chip{
+    background: rgba(255,255,255,0.03);
+    border: 1px solid var(--border);
+    color: var(--text-dim);
+    font-family: 'Inter', sans-serif;
+    font-size: 12.5px;
+    font-weight: 600;
+    padding: 7px 13px;
+    border-radius: 20px;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .tag-chip .tag-dot{ width: 6px; height: 6px; border-radius: 50%; }
+  .tag-chip[data-tag="Bug"] .tag-dot{ background: var(--high); }
+  .tag-chip[data-tag="Feature"] .tag-dot{ background: var(--accent); }
+  .tag-chip[data-tag="Design"] .tag-dot{ background: #E879C4; }
+  .tag-chip[data-tag="Docs"] .tag-dot{ background: var(--low); }
+
+  .tag-chip.active{ border-color: var(--border-strong); color: var(--text); background: rgba(255,255,255,0.07); }
+  .tag-chip:hover{ border-color: var(--border-strong); }
+
+  .data-btns{
+    display: flex;
+    gap: 8px;
+  }
+
+  .data-btn{
+    background: rgba(255,255,255,0.04);
+    border: 1px solid var(--border);
+    color: var(--text-dim);
+    font-family: 'Inter', sans-serif;
+    font-size: 12.5px;
+    font-weight: 600;
+    padding: 9px 14px;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: all 0.15s ease;
+  }
+  .data-btn:hover{ border-color: var(--border-strong); color: var(--text); background: rgba(255,255,255,0.08); }
+
+  .progress-row{
+    display: flex;
+    align-items: center;
+    gap: 14px;
+  }
+
+  .progress-label{
+    font-size: 12.5px;
+    color: var(--text-dim);
+    white-space: nowrap;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .progress-track{
+    flex: 1;
+    height: 8px;
+    background: rgba(255,255,255,0.06);
+    border-radius: 20px;
+    overflow: hidden;
+  }
+
+  .progress-fill{
+    height: 100%;
+    background: linear-gradient(90deg, var(--accent), var(--low));
+    border-radius: 20px;
+    transition: width 0.4s cubic-bezier(.22,.9,.32,1);
+    width: 0%;
+  }
+
+  mark{
+    background: rgba(242,169,59,0.35);
+    color: inherit;
+    border-radius: 3px;
+    padding: 0 1px;
+  }
+
+  .tag-badge{
+    font-size: 10.5px;
+    font-weight: 600;
+    color: var(--text-faint);
+    border: 1px solid var(--border);
+    padding: 2px 8px;
+    border-radius: 20px;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+  }
+  .tag-badge .tag-dot{ width: 5px; height: 5px; border-radius: 50%; }
+
   /* ---------- Board ---------- */
   .board{
     max-width: 1400px;
@@ -214,11 +360,13 @@
     gap: 10px;
   }
 
+  .card-title-wrap{ flex: 1; min-width: 0; }
+
   .card-title{
     font-size: 14.5px;
     font-weight: 600;
     line-height: 1.35;
-    margin: 0;
+    margin: 0 0 6px;
   }
 
   .card-desc{
@@ -436,6 +584,10 @@
     .board{ grid-template-columns: 1fr; padding: 10px 18px 50px; }
     .topbar{ padding: 22px 18px 16px; flex-direction: column; align-items: flex-start; gap: 14px; }
     .new-task-btn{ width: 100%; }
+    .toolbar{ padding: 0 18px 18px; }
+    .toolbar-row{ flex-direction: column; align-items: stretch; }
+    .data-btns{ justify-content: stretch; }
+    .data-btn{ flex: 1; }
   }
 
   ::selection{ background: rgba(124,111,240,0.3); }
@@ -452,6 +604,30 @@
     <div class="sprint-meta">Sprint 04 · local workspace</div>
   </div>
   <button class="new-task-btn" id="openDrawer">+ New task</button>
+</div>
+
+<div class="toolbar">
+  <div class="toolbar-row">
+    <div class="search-wrap">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      <input type="text" id="searchInput" placeholder="Search tasks by title or description…">
+    </div>
+    <div class="tag-filters" id="tagFilters">
+      <button class="tag-chip" data-tag="Bug"><span class="tag-dot"></span>Bug</button>
+      <button class="tag-chip" data-tag="Feature"><span class="tag-dot"></span>Feature</button>
+      <button class="tag-chip" data-tag="Design"><span class="tag-dot"></span>Design</button>
+      <button class="tag-chip" data-tag="Docs"><span class="tag-dot"></span>Docs</button>
+    </div>
+    <div class="data-btns">
+      <button class="data-btn" id="exportBtn">Export JSON</button>
+      <button class="data-btn" id="importBtn">Import JSON</button>
+      <input type="file" id="importFile" accept="application/json" style="display:none">
+    </div>
+  </div>
+  <div class="progress-row">
+    <span class="progress-label" id="progressLabel">0 / 0 done (0%)</span>
+    <div class="progress-track"><div class="progress-fill" id="progressFill"></div></div>
+  </div>
 </div>
 
 <div class="board" id="board">
@@ -509,13 +685,24 @@
         <input type="text" id="taskHours" placeholder="e.g. 4" inputmode="numeric">
       </div>
     </div>
-    <div class="field">
-      <label for="taskColumn">Column</label>
-      <select id="taskColumn">
-        <option value="todo">To Do</option>
-        <option value="progress">In Progress</option>
-        <option value="done">Done</option>
-      </select>
+    <div class="row-2">
+      <div class="field">
+        <label for="taskColumn">Column</label>
+        <select id="taskColumn">
+          <option value="todo">To Do</option>
+          <option value="progress">In Progress</option>
+          <option value="done">Done</option>
+        </select>
+      </div>
+      <div class="field">
+        <label for="taskTag">Tag</label>
+        <select id="taskTag">
+          <option value="Bug">Bug</option>
+          <option value="Feature">Feature</option>
+          <option value="Design">Design</option>
+          <option value="Docs">Docs</option>
+        </select>
+      </div>
     </div>
   </div>
   <div class="drawer-footer">
@@ -529,11 +716,12 @@
   const NEXT_ID_KEY = 'taskflow.nextId';
 
   const defaultTasks = [
-    { id: 1, title: "Design token system", desc: "Lock in the color, type, and spacing scale for the board.", priority: "Med", hours: 3, status: "todo" },
-    { id: 2, title: "Build column grid", desc: "3-column layout with CSS Grid, responsive down to mobile.", priority: "High", hours: 5, status: "progress" },
-    { id: 3, title: "Task card component", desc: "Title, description, priority badge, estimated hours.", priority: "High", hours: 4, status: "progress" },
-    { id: 4, title: "Quick-add drawer", desc: "Slide-in form for creating a new task.", priority: "Med", hours: 3, status: "todo" },
-    { id: 5, title: "Set up project repo", desc: "Initialize repo, folder structure, and README.", priority: "Low", hours: 1, status: "done" },
+    { id: 1, title: "Design token system", desc: "Lock in the color, type, and spacing scale for the board.", priority: "Med", hours: 3, status: "todo", tag: "Design" },
+    { id: 2, title: "Build column grid", desc: "3-column layout with CSS Grid, responsive down to mobile.", priority: "High", hours: 5, status: "progress", tag: "Feature" },
+    { id: 3, title: "Task card component", desc: "Title, description, priority badge, estimated hours.", priority: "High", hours: 4, status: "progress", tag: "Feature" },
+    { id: 4, title: "Quick-add drawer", desc: "Slide-in form for creating a new task.", priority: "Med", hours: 3, status: "todo", tag: "Feature" },
+    { id: 5, title: "Set up project repo", desc: "Initialize repo, folder structure, and README.", priority: "Low", hours: 1, status: "done", tag: "Docs" },
+    { id: 6, title: "Fix drag ghost image", desc: "Dragging a card shows a broken outline in Safari.", priority: "Med", hours: 2, status: "todo", tag: "Bug" },
   ];
 
   // ---- Persistence layer ----
@@ -550,7 +738,7 @@
       const raw = localStorage.getItem(NEXT_ID_KEY);
       if(raw){ return parseInt(raw, 10); }
     }catch(e){}
-    return 6;
+    return 7;
   }
 
   function persist(){
@@ -565,6 +753,8 @@
   let selectedPriority = "Med";
   let draggedId = null;
   let editingId = null; // null = add mode, otherwise id of task being edited
+  let searchQuery = '';
+  let activeTags = new Set(); // empty set = no tag filter applied, show all
 
   const columnOrder = ['todo', 'progress', 'done'];
   const columnLabels = { todo: 'To Do', progress: 'In Progress', done: 'Done' };
@@ -591,16 +781,45 @@
     render();
   }
 
+  function escapeHtml(str){
+    return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  }
+
+  function highlight(text, query){
+    const safe = escapeHtml(text);
+    if(!query) return safe;
+    const escapedQuery = query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    return safe.replace(new RegExp('(' + escapedQuery + ')', 'ig'), '<mark>$1</mark>');
+  }
+
+  function matchesFilters(task){
+    const q = searchQuery.trim().toLowerCase();
+    const matchesSearch = !q || task.title.toLowerCase().includes(q) || task.desc.toLowerCase().includes(q);
+    const matchesTag = activeTags.size === 0 || activeTags.has(task.tag);
+    return matchesSearch && matchesTag;
+  }
+
+  function updateProgress(){
+    const total = tasks.length;
+    const done = tasks.filter(t => t.status === 'done').length;
+    const pct = total === 0 ? 0 : Math.round((done / total) * 100);
+    document.getElementById('progressFill').style.width = pct + '%';
+    document.getElementById('progressLabel').textContent = `${done} / ${total} done (${pct}%)`;
+  }
+
   function render(){
+    updateProgress();
+    const q = searchQuery.trim();
+
     columnOrder.forEach(status => {
-      const list = tasks.filter(t => t.status === status);
+      const list = tasks.filter(t => t.status === status && matchesFilters(t));
       stacks[status].innerHTML = '';
       counts[status].textContent = list.length;
 
       if(list.length === 0){
         const hint = document.createElement('div');
         hint.className = 'empty-hint';
-        hint.textContent = 'No tasks yet';
+        hint.textContent = (searchQuery || activeTags.size > 0) ? 'No matching tasks' : 'No tasks yet';
         stacks[status].appendChild(hint);
         return;
       }
@@ -614,16 +833,20 @@
         const colIndex = columnOrder.indexOf(status);
         const prevStatus = columnOrder[colIndex - 1];
         const nextStatus = columnOrder[colIndex + 1];
+        const tag = task.tag || 'Feature';
 
         card.innerHTML = `
           <div class="card-top">
-            <p class="card-title"></p>
+            <div class="card-title-wrap">
+              <p class="card-title">${highlight(task.title, q)}</p>
+              <span class="tag-badge" data-tag="${tag}"><span class="tag-dot"></span>${tag}</span>
+            </div>
             <div class="card-actions">
               <button class="edit-btn" title="Edit task">✎</button>
               <button class="delete-btn" title="Delete task">✕</button>
             </div>
           </div>
-          <p class="card-desc"></p>
+          <p class="card-desc">${highlight(task.desc, q)}</p>
           <div class="card-footer">
             <span class="badge ${task.priority.toLowerCase()}">${task.priority}</span>
             <span class="hours">${task.hours}h</span>
@@ -633,8 +856,8 @@
             <button class="move-btn move-next" ${!nextStatus ? 'disabled' : ''}>${nextStatus ? columnLabels[nextStatus] + ' →' : '—'}</button>
           </div>
         `;
-        card.querySelector('.card-title').textContent = task.title;
-        card.querySelector('.card-desc').textContent = task.desc;
+
+        card.querySelector('.tag-badge').style.color = ({Bug: 'var(--high)', Feature: 'var(--accent)', Design: '#E879C4', Docs: 'var(--low)'})[tag];
 
         card.querySelector('.delete-btn').addEventListener('click', (e) => {
           e.stopPropagation();
@@ -661,6 +884,65 @@
       });
     });
   }
+
+  // ---- Search & tag filter controls ----
+  document.getElementById('searchInput').addEventListener('input', (e) => {
+    searchQuery = e.target.value;
+    render();
+  });
+
+  document.querySelectorAll('.tag-chip').forEach(chip => {
+    chip.addEventListener('click', () => {
+      const tag = chip.dataset.tag;
+      if(activeTags.has(tag)){
+        activeTags.delete(tag);
+        chip.classList.remove('active');
+      }else{
+        activeTags.add(tag);
+        chip.classList.add('active');
+      }
+      render();
+    });
+  });
+
+  // ---- JSON export / import ----
+  document.getElementById('exportBtn').addEventListener('click', () => {
+    const dataStr = JSON.stringify({ tasks, nextId }, null, 2);
+    const blob = new Blob([dataStr], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `taskflow-backup-${new Date().toISOString().slice(0,10)}.json`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+  });
+
+  const importFileInput = document.getElementById('importFile');
+  document.getElementById('importBtn').addEventListener('click', () => importFileInput.click());
+
+  importFileInput.addEventListener('change', (e) => {
+    const file = e.target.files[0];
+    if(!file) return;
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      try{
+        const parsed = JSON.parse(event.target.result);
+        const incomingTasks = Array.isArray(parsed) ? parsed : parsed.tasks;
+        if(!Array.isArray(incomingTasks)) throw new Error('No task array found in file');
+        tasks = incomingTasks;
+        nextId = parsed.nextId || (Math.max(0, ...tasks.map(t => t.id)) + 1);
+        persist();
+        render();
+      }catch(err){
+        alert('Could not import that file — make sure it\'s a valid TaskFlow JSON export.');
+        console.error(err);
+      }
+      importFileInput.value = '';
+    };
+    reader.readAsText(file);
+  });
 
   document.querySelectorAll('.column').forEach(col => {
     col.addEventListener('dragover', (e) => {
@@ -689,6 +971,7 @@
     document.getElementById('taskHours').value = '';
     document.getElementById('taskTitle').style.borderColor = '';
     document.getElementById('taskColumn').value = 'todo';
+    document.getElementById('taskTag').value = 'Feature';
     selectedPriority = 'Med';
     document.querySelectorAll('.priority-toggle button').forEach(b => b.classList.remove('active'));
     document.querySelector('.priority-toggle button[data-p="Med"]').classList.add('active');
@@ -710,6 +993,7 @@
     document.getElementById('taskDesc').value = task.desc;
     document.getElementById('taskHours').value = task.hours;
     document.getElementById('taskColumn').value = task.status;
+    document.getElementById('taskTag').value = task.tag || 'Feature';
     selectedPriority = task.priority;
     document.querySelectorAll('.priority-toggle button').forEach(b => {
       b.classList.toggle('active', b.dataset.p === task.priority);
@@ -744,6 +1028,7 @@
     const desc = document.getElementById('taskDesc').value.trim();
     const hours = parseFloat(document.getElementById('taskHours').value) || 0;
     const status = document.getElementById('taskColumn').value;
+    const tag = document.getElementById('taskTag').value;
 
     if(!title){
       document.getElementById('taskTitle').style.borderColor = 'var(--high)';
@@ -758,9 +1043,10 @@
         task.priority = selectedPriority;
         task.hours = hours;
         task.status = status;
+        task.tag = tag;
       }
     }else{
-      tasks.push({ id: nextId++, title, desc, priority: selectedPriority, hours, status });
+      tasks.push({ id: nextId++, title, desc, priority: selectedPriority, hours, status, tag });
     }
 
     persist();
